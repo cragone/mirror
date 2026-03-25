@@ -1,0 +1,25 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+:root {
+    --color-base-100: #000000;
+    --color-base-200: #000000;
+    --color-base-300: #000000;
+    --color-base-content: #ffffff;
+}
+
+html,
+body,
+#root {
+    margin: 0;
+    height: 100%;
+    background: black;
+}
+
+body {
+    font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
+    overflow: hidden; /* important for kiosk */
+}
