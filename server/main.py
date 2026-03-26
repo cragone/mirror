@@ -1,18 +1,14 @@
-from fastapi import FastAPI
-from fastapi.websockets import WebSocket
-from pydantic import BaseModel, Field
+import json
+import os
+
+from fastapi import FastAPI, WebSocket
+from vosk import KaldiRecognizer, Model
 
 app = FastAPI()
 
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "vosk-model-small-en-us-0.15")
 
-class ChatRequest(BaseModel):
-    message: str
-    session_id: str | None = None
-
-
-class ChatResponse(BaseModel):
-    reply: str
-    actions: list[str] = Field(default_factory=list)
+model = Model(MODEL_PATH)
 
 
 @app.get("/health")
@@ -20,17 +16,12 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    return ChatResponse(reply=f"You said: {req.message}", actions=[])
-
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     while True:
-        data = await websocket.receive_text()
+        data = await websocket.receive_bytes()
         print(f"Received: {data}")
 
         await websocket.send_text(f"Echo: {data}")
