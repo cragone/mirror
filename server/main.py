@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.websockets import WebSocket
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -22,3 +23,14 @@ def health():
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     return ChatResponse(reply=f"You said: {req.message}", actions=[])
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+
+    while True:
+        data = await websocket.receive_text()
+        print(f"Received: {data}")
+
+        await websocket.send_text(f"Echo: {data}")
