@@ -1,3 +1,3 @@
 
 # run the projectw
-python -m uvicorn server.main:app --reload
+py -m uvicorn main:app --reload

@@ -3,10 +3,12 @@ import json
 import os
 import queue
 import threading
+from datetime import datetime, timedelta
 
 import sounddevice as sd
-from commands import get_command_from_text
+from commands import getCommandFromText, getState, mirrorResponse, toggleCommand
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from voice import speak
 from vosk import KaldiRecognizer, Model
 
 app = FastAPI()
@@ -47,45 +49,67 @@ async def broadcast_json(payload: dict):
         connected_clients.discard(ws)
 
 
-def recognizer_worker():
-    recognizer = KaldiRecognizer(model, SAMPLE_RATE)
+def recognizerWorker():
+    try:
+        recognizer = KaldiRecognizer(model, SAMPLE_RATE)
+        lastCommandTime = datetime.min
+        COOL_DOWN = timedelta(seconds=2)
 
-    with sd.RawInputStream(
-        samplerate=SAMPLE_RATE,
-        blocksize=BLOCKSIZE,
-        dtype="int16",
-        channels=CHANNELS,
-        callback=audio_callback,
-    ):
-        print("Microphone listener started")
+        with sd.RawInputStream(
+            samplerate=SAMPLE_RATE,
+            blocksize=BLOCKSIZE,
+            device=1,
+            dtype="int16",
+            channels=CHANNELS,
+            callback=audio_callback,
+        ):
+            print("Microphone listener started")
+            while True:
+                data = audio_queue.get()
+                now = datetime.now()
 
-        while True:
-            data = audio_queue.get()
-
-            if recognizer.AcceptWaveform(data):
-                result = json.loads(recognizer.Result())
-                text = result.get("text", "").strip()
-
-                if not text or loop is None:
+                # Ignore all audio during cooldown
+                if now - lastCommandTime < COOL_DOWN:
                     continue
 
-                command = get_command_from_text(text)
+                if recognizer.AcceptWaveform(data):
+                    result = json.loads(recognizer.Result())
+                    text = result.get("text", "").strip()
+                    if not text or loop is None:
+                        continue
 
-                if command:
-                    asyncio.run_coroutine_threadsafe(
-                        broadcast_json(
-                            {
-                                "type": "command",
-                                "command": command,
-                            }
-                        ),
-                        loop,
-                    )
-                    print(f"Command detected: {command}")
+                    command = getCommandFromText(text)
+                    if command:
+                        lastCommandTime = datetime.now()
 
-            else:
-                # Ignore partial speech completely
-                recognizer.PartialResult()
+                        toggleCommand(command)
+                        asyncio.run_coroutine_threadsafe(
+                            broadcast_json(
+                                {
+                                    "type": "state",
+                                    "state": getState(),
+                                }
+                            ),
+                            loop,
+                        )
+                        print(f"Command detected: {command}")
+                        speak(mirrorResponse(command))
+
+                        recognizer = KaldiRecognizer(model, SAMPLE_RATE)
+
+                        while not audio_queue.empty():
+                            try:
+                                audio_queue.get_nowait()
+                            except queue.Empty:
+                                break
+                else:
+                    recognizer.PartialResult()
+    except Exception as e:
+        if loop is not None:
+            asyncio.run_coroutine_threadsafe(
+                broadcast_json({"type": "error", "message": str(e)}),
+                loop,
+            )
 
 
 @app.on_event("startup")
@@ -93,7 +117,7 @@ async def startup_event():
     global loop
     loop = asyncio.get_running_loop()
 
-    thread = threading.Thread(target=recognizer_worker, daemon=True)
+    thread = threading.Thread(target=recognizerWorker, daemon=True)
     thread.start()
 
 
@@ -103,21 +127,15 @@ async def websocket_endpoint(websocket: WebSocket):
     connected_clients.add(websocket)
 
     try:
-        await websocket.send_text(
-            json.dumps(
-                {
-                    "type": "status",
-                    "text": "connected to local vosk listener",
-                }
-            )
-        )
-
+        await websocket.send_text(json.dumps({"type": "status", "text": "connected"}))
+        await websocket.send_text(json.dumps({"type": "state", "state": getState()}))
         while True:
-            await asyncio.sleep(1)
+            await websocket.receive_text()
 
     except WebSocketDisconnect:
         connected_clients.discard(websocket)
         print("Client disconnected")
-    except Exception:
+    except Exception as e:
         connected_clients.discard(websocket)
+        print(f"Unexpected websocket error: {e}")
         raise
