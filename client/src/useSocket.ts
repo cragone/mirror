@@ -4,8 +4,8 @@ const WS_URL = "ws://localhost:8000/ws";
 const RECONNECT_DELAY_MS = 3000;
 
 type MirrorState = {
-  "weather display": boolean;
-  "time display": boolean;
+  weather_display: boolean;
+  time_display: boolean;
 };
 
 type WebSocketMessage =
@@ -20,8 +20,8 @@ function useWebSocket() {
   const [messages, setMessages] = useState<WebSocketMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [mirrorState, setMirrorState] = useState<MirrorState>({
-    "weather display": false,
-    "time display": false,
+    weather_display: false,
+    time_display: false,
   });
 
   useEffect(() => {

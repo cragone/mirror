@@ -1,16 +1,61 @@
-WEATHER_COMMAND = "weather display"
-TIME_COMMAND = "time display"
+from random import choice, random
+
+WEATHER_COMMAND = "weather_display"
+TIME_COMMAND = "time_display"
 
 commands = {
     "weather": WEATHER_COMMAND,
     "whether": WEATHER_COMMAND,
     "time": TIME_COMMAND,
+    "clock": TIME_COMMAND,
 }
 
 command_state = {
     WEATHER_COMMAND: False,
     TIME_COMMAND: False,
 }
+
+RESPONSES = {
+    WEATHER_COMMAND: {
+        True: [
+            "Showing the weather.",
+            "Here’s the forecast.",
+            "Weather is up.",
+            "Putting the forecast on screen.",
+            "You’ve got the weather now.",
+        ],
+        False: [
+            "Hiding the weather.",
+            "Removing the forecast.",
+            "Weather is off.",
+            "Taking the weather down.",
+            "Forecast cleared.",
+        ],
+    },
+    TIME_COMMAND: {
+        True: [
+            "Showing the clock.",
+            "Time is up.",
+            "Clock is on screen.",
+            "Putting the time up.",
+            "You can see the time now.",
+        ],
+        False: [
+            "Hiding the clock.",
+            "Removing the time display.",
+            "Clock is off.",
+            "Taking the time down.",
+            "Time display cleared.",
+        ],
+    },
+}
+
+ACKS = [
+    "Okay.",
+    "Got it.",
+    "Sure.",
+    "Alright.",
+]
 
 
 def getCommandFromText(text: str):
@@ -32,8 +77,11 @@ def getState() -> dict:
     return dict(command_state)
 
 
-def mirrorResponse(command: str):
-    if command_state[command]:
-        return "turning" + command + "on"
-    else:
-        return "turning" + command + "off"
+def mirrorResponse(command: str) -> str:
+    state = command_state[command]
+    action = choice(RESPONSES[command][state])
+    ack = choice(ACKS)
+
+    if random() < 0.5:
+        return f"{ack} {action}"
+    return action
