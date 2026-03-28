@@ -1,18 +1,32 @@
 from random import choice, random
 
+from annotated_types import T
+
 WEATHER_COMMAND = "weather_display"
 TIME_COMMAND = "time_display"
+SPEAK_PORTGUESE = "speak_pt"
 
 commands = {
+    # english commands
     "weather": WEATHER_COMMAND,
     "whether": WEATHER_COMMAND,
     "time": TIME_COMMAND,
     "clock": TIME_COMMAND,
+    "brazil": SPEAK_PORTGUESE,
+    "portuguese": SPEAK_PORTGUESE,
+    "brazilian": SPEAK_PORTGUESE,
+    # portguese commands
+    "tempo": WEATHER_COMMAND,
+    "hora": TIME_COMMAND,
+    "horas": TIME_COMMAND,
+    "clima": WEATHER_COMMAND,
+    "inglês": SPEAK_PORTGUESE,
 }
 
 command_state = {
     WEATHER_COMMAND: False,
     TIME_COMMAND: False,
+    SPEAK_PORTGUESE: False,
 }
 
 RESPONSES = {
@@ -48,13 +62,78 @@ RESPONSES = {
             "Time display cleared.",
         ],
     },
+    SPEAK_PORTGUESE: {
+        True: ["Mirror agora está falando inglês."],
+        False: [
+            "mirror now speaking english",
+        ],
+    },
 }
 
-ACKS = [
-    "Okay.",
-    "Got it.",
-    "Sure.",
-    "Alright.",
+BRAZILIAN_RESPONSES = {
+    WEATHER_COMMAND: {
+        True: [
+            "Mostrando o clima.",
+            "Aqui está a previsão.",
+            "Clima na tela.",
+            "Colocando a previsão na tela.",
+            "Agora você pode ver o clima.",
+        ],
+        False: [
+            "Escondendo o clima.",
+            "Removendo a previsão.",
+            "Clima desligado.",
+            "Tirando o clima da tela.",
+            "Previsão removida.",
+        ],
+    },
+    TIME_COMMAND: {
+        True: [
+            "Mostrando o relógio.",
+            "Hora na tela.",
+            "Relógio visível.",
+            "Colocando o horário na tela.",
+            "Agora você pode ver a hora.",
+        ],
+        False: [
+            "Escondendo o relógio.",
+            "Removendo o horário.",
+            "Relógio desligado.",
+            "Tirando o horário da tela.",
+            "Horário removido.",
+        ],
+    },
+    SPEAK_PORTGUESE: {
+        True: ["Espelho agora está falando inglês."],
+        False: [
+            "mirror now speaking english",
+        ],
+    },
+}
+
+ACKS = ["Okay.", "Got it.", "Alright.", "Are you sure?"]
+
+BRAZILIAN_ACKS = [
+    "beleza",
+    "tranquilo",
+    "tá bom",
+    "ok",
+    "certo",
+    "feito",
+    "já foi",
+    "pronto",
+    "fechou",
+    "demorou",
+    "valeu",
+    "boa",
+    "é isso",
+    "show",
+    "top",
+    "perfeito",
+    "mandou bem",
+    "tamo junto",
+    "bora",
+    "partiu",
 ]
 
 
@@ -77,10 +156,15 @@ def getState() -> dict:
     return dict(command_state)
 
 
-def mirrorResponse(command: str) -> str:
+def mirrorResponse(command: str, lang: str = "en") -> str:
     state = command_state[command]
-    action = choice(RESPONSES[command][state])
-    ack = choice(ACKS)
+
+    if command_state[SPEAK_PORTGUESE]:
+        ack = choice(BRAZILIAN_ACKS)
+        action = choice(BRAZILIAN_RESPONSES[command][state])
+    else:
+        ack = choice(ACKS)
+        action = choice(RESPONSES[command][state])
 
     if random() < 0.5:
         return f"{ack} {action}"

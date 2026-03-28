@@ -1,18 +1,26 @@
+import os
 import queue
-import subprocess
-import sys
 import threading
+import uuid
+
+from gtts import gTTS
+
+
+def talk(text: str, lang: str = "en", tld: str = "com"):
+    base_dir = os.path.dirname(__file__)
+
+    trash_dir = os.path.join(base_dir, "trash")
+
+    os.makedirs(trash_dir, exist_ok=True)
+
+    filename = os.path.join(trash_dir, "tts_{uuid.uuid4().hex}.mp3")
+
+    tts = gTTS(text=text, lang=lang, tld=tld)
+    tts.save(filename)
+    os.startfile(filename)  # Windows only
+
 
 _ttsQueue = queue.Queue()
-
-_TTS_SCRIPT = """
-import pyttsx3, sys
-engine = pyttsx3.init()
-voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[0].id)
-engine.say(sys.argv[1])
-engine.runAndWait()
-"""
 
 
 def _ttsWorker():
@@ -21,14 +29,10 @@ def _ttsWorker():
         if words is None:
             break
         try:
-            subprocess.run([sys.executable, "-c", _TTS_SCRIPT, words], timeout=15)
+            talk(words)
         except Exception as e:
             print(f"TTS error: {e}")
 
 
 _ttsThread = threading.Thread(target=_ttsWorker, daemon=True)
 _ttsThread.start()
-
-
-def speak(words: str):
-    _ttsQueue.put(words)
