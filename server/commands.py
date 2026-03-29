@@ -12,7 +12,6 @@ commands = {
     "whether": WEATHER_COMMAND,
     "time": TIME_COMMAND,
     "clock": TIME_COMMAND,
-    "brazil": SPEAK_PORTGUESE,
     "portuguese": SPEAK_PORTGUESE,
     "brazilian": SPEAK_PORTGUESE,
     # portguese commands
@@ -50,7 +49,7 @@ RESPONSES = {
         True: [
             "Showing the clock.",
             "Time is up.",
-            "Clock is on screen.",
+            "Putting up the clock.",
             "Putting the time up.",
             "You can see the time now.",
         ],
@@ -111,7 +110,7 @@ BRAZILIAN_RESPONSES = {
     },
 }
 
-ACKS = ["Okay.", "Got it.", "Alright.", "Are you sure?"]
+ACKS = ["Okay.", "Got it.", "Alright.", "Are you sure?", "Here."]
 
 BRAZILIAN_ACKS = [
     "beleza",
@@ -137,18 +136,10 @@ BRAZILIAN_ACKS = [
 ]
 
 
-def getCommandFromText(text: str):
-    words = text.lower().split()
-    for word in words:
-        if word in commands:
-            return commands[word]
-    return None
-
-
-def toggleCommand(command: str) -> bool:
+def toggleCommand(command: str, intent: bool) -> bool:
     """Toggle state and return the new value."""
     if command in command_state:
-        command_state[command] = not command_state[command]
+        command_state[command] = intent
     return command_state[command]
 
 
@@ -169,3 +160,82 @@ def mirrorResponse(command: str, lang: str = "en") -> str:
     if random() < 0.5:
         return f"{ack} {action}"
     return action
+
+
+ON_WORDS = {
+    # english
+    "on",
+    "show",
+    "open",
+    "start",
+    "enable",
+    "portuguese",
+    "brazilian",
+    "what",
+    "whats",
+    # portuguese
+    "liga",
+    "ligar",
+    "mostrar",
+    "mostra",
+    "abre",
+    "abrir",
+    "ativa",
+    "ativar",
+    "que",
+}
+
+
+OFF_WORDS = {
+    # english
+    "off",
+    "hide",
+    "close",
+    "stop",
+    "disable",
+    "remove",
+    "english",
+    # portuguese
+    "desliga",
+    "desligar",
+    "esconde",
+    "esconder",
+    "fecha",
+    "fechar",
+    "remove",
+    "remover",
+    "para",
+    "parar",
+    "desativa",
+    "desativar",
+    "inglês",
+}
+
+
+def isTalkingToMirror(text: str) -> bool:
+    words = text.lower().split()
+    for word in words:
+        if word == "mirror":
+            return True
+    return False
+
+
+def getCommandFromText(text: str):
+    words = text.lower().split()
+    for word in words:
+        if word in commands:
+            return commands[word]
+    return None
+
+
+def getIntentFromText(text: str) -> bool:
+    words = text.lower().replace(",", " ").replace(".", " ").split()
+    word_set = set(words)
+
+    if word_set & ON_WORDS:
+        return True
+
+    if word_set & OFF_WORDS:
+        return False
+
+    return False  # no clear intent

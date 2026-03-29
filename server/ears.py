@@ -9,7 +9,9 @@ from commands import (
     SPEAK_PORTGUESE,
     command_state,
     getCommandFromText,
+    getIntentFromText,
     getState,
+    isTalkingToMirror,
     mirrorResponse,
     toggleCommand,
 )
@@ -104,11 +106,14 @@ def recognizer_worker(loop, broadcast_json):
                     if not text or loop is None:
                         continue
 
+                    if not isTalkingToMirror(text):
+                        return
                     command = getCommandFromText(text)
+                    intent = getIntentFromText(text)
                     if command:
                         last_command_time = datetime.now()
 
-                        toggleCommand(command)
+                        toggleCommand(command, intent)
 
                         asyncio.run_coroutine_threadsafe(
                             broadcast_json(
