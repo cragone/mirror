@@ -8,6 +8,32 @@ type WeatherState = {
   low: string;
 };
 
+async function turnLightOn() {
+  try {
+    const res = await fetch("http://localhost:8000/light_on", {
+      method: "GET",
+    });
+
+    const data = await res.json();
+    console.log("Light ON response:", data);
+  } catch (err) {
+    console.error("Error turning light on:", err);
+  }
+}
+
+async function turnLightOff() {
+  try {
+    const res = await fetch("http://localhost:8000/light_off", {
+      method: "GET",
+    });
+
+    const data = await res.json();
+    console.log("Light ON response:", data);
+  } catch (err) {
+    console.error("Error turning light on:", err);
+  }
+}
+
 function App() {
   const [now, setNow] = useState<Date>(new Date());
   const { mirrorState } = useWebSocket();
@@ -99,7 +125,15 @@ function App() {
             </>
           )}
         </section>
-
+        <button className="btn btn-lg bg-primary" onClick={() => turnLightOn()}>
+          Lights On
+        </button>
+        <button
+          className="btn btn-lg bg-primary"
+          onClick={() => turnLightOff()}
+        >
+          Lights Off
+        </button>
         {/* ── Footer ── */}
         <footer className="flex items-end justify-end text-lg text-secondary lg:col-start-2 lg:row-start-2 lg:self-end">
           <span>Tico&apos;s Mirror</span>
