@@ -102,7 +102,7 @@ function App() {
 
         {/* ── Footer ── */}
         <footer className="flex items-end justify-end text-lg text-secondary lg:col-start-2 lg:row-start-2 lg:self-end">
-          <span>Lorena&apos;s Mirror</span>
+          <span>Tico&apos;s Mirror</span>
         </footer>
       </div>
     </main>
