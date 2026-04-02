@@ -8,34 +8,9 @@ type WeatherState = {
   low: string;
 };
 
-async function turnLightOn() {
-  try {
-    const res = await fetch("http://localhost:8000/light_on", {
-      method: "GET",
-    });
-
-    const data = await res.json();
-    console.log("Light ON response:", data);
-  } catch (err) {
-    console.error("Error turning light on:", err);
-  }
-}
-
-async function turnLightOff() {
-  try {
-    const res = await fetch("http://localhost:8000/light_off", {
-      method: "GET",
-    });
-
-    const data = await res.json();
-    console.log("Light ON response:", data);
-  } catch (err) {
-    console.error("Error turning light on:", err);
-  }
-}
-
 function App() {
   const [now, setNow] = useState<Date>(new Date());
+  const [isLightOn, setIsLightOn] = useState(false);
   const { mirrorState } = useWebSocket();
 
   const showWeather = mirrorState.weather_display;
@@ -53,11 +28,31 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  async function toggleLight() {
+    const nextState = !isLightOn;
+    const endpoint = nextState ? "light_on" : "light_off";
+
+    try {
+      const res = await fetch(`http://localhost:8000/${endpoint}`, {
+        method: "GET",
+      });
+
+      const data = await res.json();
+      console.log("Light response:", data);
+
+      setIsLightOn(nextState);
+    } catch (err) {
+      console.error("Error toggling light:", err);
+    }
+  }
+
   const time = now.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
   const seconds = now.toLocaleTimeString([], { second: "2-digit" });
+
   const date = now.toLocaleDateString([], {
     weekday: "long",
     month: "long",
@@ -71,7 +66,6 @@ function App() {
       data-theme="mirror"
     >
       <div className="grid min-h-screen grid-cols-1 grid-rows-[auto_1fr_auto] gap-8 p-6 md:p-10 lg:grid-cols-[1.2fr_0.8fr] lg:grid-rows-[auto_1fr]">
-        {/* ── Left column ── */}
         <section className="flex flex-col justify-start lg:col-start-1 lg:row-span-2">
           <div className="space-y-2">
             <p className="text-sm uppercase tracking-[0.35em] text-secondary">
@@ -95,7 +89,6 @@ function App() {
             )}
           </div>
 
-          {/* Divider */}
           {showWeather && (
             <>
               {showTimePanel && (
@@ -125,16 +118,11 @@ function App() {
             </>
           )}
         </section>
-        <button className="btn btn-lg bg-primary" onClick={() => turnLightOn()}>
-          Lights On
+
+        <button className="btn btn-lg bg-primary" onClick={toggleLight}>
+          {isLightOn ? "Lights Off" : "Lights On"}
         </button>
-        <button
-          className="btn btn-lg bg-primary"
-          onClick={() => turnLightOff()}
-        >
-          Lights Off
-        </button>
-        {/* ── Footer ── */}
+
         <footer className="flex items-end justify-end text-lg text-secondary lg:col-start-2 lg:row-start-2 lg:self-end">
           <span>Tico&apos;s Mirror</span>
         </footer>
