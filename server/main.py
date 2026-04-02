@@ -1,15 +1,32 @@
 import asyncio
 import json
 import threading
+from contextlib import asynccontextmanager
 
 from commands import getState
 from ears import recognizer_worker
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
-app = FastAPI()
-
 connected_clients: set[WebSocket] = set()
 loop = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global loop
+    loop = asyncio.get_running_loop()
+
+    thread = threading.Thread(
+        target=recognizer_worker,
+        args=(loop, broadcast_json),
+        daemon=True,
+    )
+    thread.start()
+
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/health")
@@ -28,19 +45,6 @@ async def broadcast_json(payload: dict):
 
     for ws in dead:
         connected_clients.discard(ws)
-
-
-@app.on_event("startup")
-async def startup_event():
-    global loop
-    loop = asyncio.get_running_loop()
-
-    thread = threading.Thread(
-        target=recognizer_worker,
-        args=(loop, broadcast_json),
-        daemon=True,
-    )
-    thread.start()
 
 
 @app.websocket("/ws")
