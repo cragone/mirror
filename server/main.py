@@ -2,6 +2,8 @@ import asyncio
 import json
 import threading
 from contextlib import asynccontextmanager
+from lights import turnLightOn, turnLightOff
+
 
 # from commands import getState
 # from ears import recognizer_worker
@@ -34,6 +36,16 @@ app = FastAPI()
 def health():
     return {"status": "ok"}
 
+
+@app.get("/light_on")
+def lightOn():
+    turnLightOn()
+    return {"status": "light is on"}
+
+@app.get("/light_off")
+def lightOff():
+    turnLightOff()
+    return {"status": "light is off"}
 
 # async def broadcast_json(payload: dict):
 #     dead = []
